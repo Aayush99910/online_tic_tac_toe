@@ -5,7 +5,18 @@
     "vector": "cpp",
     "chrono": "cpp",
     "functional": "cpp",
-    "utility": "cpp"
+    "utility": "cpp",
+    "array": "cpp",
+    "deque": "cpp",
+    "initializer_list": "cpp",
+    "list": "cpp",
+    "type_traits": "cpp",
+    "valarray": "cpp",
+    "xhash": "cpp",
+    "xstring": "cpp",
+    "xtree": "cpp",
+    "xutility": "cpp"
   },
-  "C_Cpp.default.compilerPath": "cl.exe"
+  "C_Cpp.default.compilerPath": "cl.exe",
+  "cmake.sourceDirectory": "C:/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src"
 }
