@@ -1,6 +1,11 @@
 {
   "files.associations": {
     "ostream": "cpp",
-    "iostream": "cpp"
-  }
+    "iostream": "cpp",
+    "vector": "cpp",
+    "chrono": "cpp",
+    "functional": "cpp",
+    "utility": "cpp"
+  },
+  "C_Cpp.default.compilerPath": "cl.exe"
 }
