@@ -1,0 +1,7 @@
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/gamelogic.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/list_install_components.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/install.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/install/local.dir
+/mnt/c/Users/16692/Documents/Trimester 7 or Semester 5/Programming in C and C++/Project/Online Tic Tac Toe/online_tic_tac_toe/src/build/CMakeFiles/install/strip.dir
