@@ -47,8 +47,8 @@ bool isValidCol(int col, char target) {
 // if any diagonal is all same character then this function will return true 
 bool isValidDiagonal(char target) {
   int size = globalBoard.size(); // getting the size of the board 
-  bool leftDiagonal;
-  bool rightDiagonal;
+  bool leftDiagonal = true;
+  bool rightDiagonal = true;
 
   // loop to go through the board 
   for (int i = 0; i < size; i++) {
@@ -79,7 +79,6 @@ bool hasWon(){
           }
         }
       }
-
 		}
 	}
 
@@ -116,14 +115,7 @@ bool isDraw() {
 bool playerMakeMove(int row, int col, char playerChoice) {
   // checking if the chosen cell is empty or not 
   if (globalBoard[row][col] == ' ') {
-    cout << row << col << endl;
     globalBoard[row][col] = playerChoice;
-
-    for (int i = 0; i < globalBoard.size(); i++){
-    	for (int j = 0; j < globalBoard.size(); j++) {
-        cout << globalBoard[i][j] << endl;
-      }
-    }
     return true;
   }
 
@@ -137,4 +129,4 @@ PYBIND11_MODULE(gamelogic, m) {
     m.def("isDraw", &isDraw, "Check if it's a draw");
     m.def("playerMakeMove", &playerMakeMove, "Player makes a move");
     m.def("getBoard", &getBoard, "Returns the global board");
-};
+}
