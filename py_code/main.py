@@ -1,7 +1,12 @@
- # type: ignore
+# type: ignore
 import sys
 sys.path.append('../src/build')
-import gamelogic 
+import gamelogic
+
+# Constants
+BOARD_SIZE = 3
+PLAYER_X = 'X'
+PLAYER_O = 'O'
 
 def display_board(board) -> None:
     for i in range(len(board)):
@@ -15,35 +20,44 @@ def display_board(board) -> None:
             print()
         else:
             print("------------")
-    
-def game():
-    # Initialize the gameboard 
-    gamelogic.initializeBoard()
-    player_symbol = 'X'
-    i = 0
-    display_board(gamelogic.getBoard())
-    while i < 10: 
-        print(f"Player {player_symbol} turn!")
-        x = int(input("Please provide the row you want to put your character at: "))
-        y = int(input("Please provide the column you want to put your character at: "))
-        
-        if gamelogic.playerMakeMove(x, y, player_symbol):
-            print("Move successful!")
-            if gamelogic.hasWon():
-                print(f"Player {player_symbol} won!")
-                display_board(gamelogic.getBoard())
-                break 
-            elif gamelogic.isDraw():
-                print(f"Game is tied!")
-                display_board(gamelogic.getBoard())
-                break 
-            else:
-                player_symbol = 'O' if player_symbol == 'X' else 'X'
-        else:
-            print("Please select a different place to insert as this place is already occupied")
 
-        display_board(gamelogic.getBoard())
-        
-        i += 1
-    
-game()
+
+def get_valid_move() -> tuple:
+    """Gets a valid move from the user and ensures input correctness."""
+    while True:
+        try:
+            x = int(input("Enter row (0-2): "))
+            y = int(input("Enter column (0-2): "))
+            if 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE:
+                return (x, y)
+            else:
+                print("Invalid input! Row and column must be between 0 and 2.")
+        except ValueError:
+            print("Invalid input! Please enter numbers only.")
+
+def play_game():
+    """Controls the game loop and manages player turns."""
+    gamelogic.initializeBoard()
+    player_symbol = PLAYER_X
+    display_board(gamelogic.getBoard())
+
+    while True:
+        print(f"Player {player_symbol}'s turn.")
+        row, col = get_valid_move()
+
+        if gamelogic.playerMakeMove(row, col, player_symbol):
+            display_board(gamelogic.getBoard())
+
+            if gamelogic.hasWon():
+                print(f"Player {player_symbol} wins!")
+                break
+            if gamelogic.isDraw():
+                print("It's a draw!")
+                break
+
+            # Switch player
+            player_symbol = PLAYER_O if player_symbol == PLAYER_X else PLAYER_X
+        else:
+            print("That spot is already taken. Try again.")
+
+play_game()
