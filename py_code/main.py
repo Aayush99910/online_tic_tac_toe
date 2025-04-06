@@ -1,63 +1,50 @@
 # type: ignore
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import sys
+
+# Import the C++ module
 sys.path.append('../src/build')
 import gamelogic
 
-# Constants
-BOARD_SIZE = 3
-PLAYER_X = 'X'
-PLAYER_O = 'O'
+app = FastAPI()
 
-def display_board(board) -> None:
-    for i in range(len(board)):
-        for j in range(len(board[i])):
-            if j == len(board[i]) - 1:
-                print(f" {board[i][j]} ")
-            else:
-                print(f" {board[i][j]} ", end="|")
-        
-        if i == len(board) - 1:
-            print()
-        else:
-            print("------------")
+# Allow CORS for all domains (you can restrict this if you need to)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (use specific URLs in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
+# Home page for welcoming the users
+@app.get("/")
+def home_page():
+    return {"message": "Welcome to multiplayer tic tac toe game!"}
 
-def get_valid_move() -> tuple:
-    """Gets a valid move from the user and ensures input correctness."""
-    while True:
-        try:
-            x = int(input("Enter row (0-2): "))
-            y = int(input("Enter column (0-2): "))
-            if 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE:
-                return (x, y)
-            else:
-                print("Invalid input! Row and column must be between 0 and 2.")
-        except ValueError:
-            print("Invalid input! Please enter numbers only.")
-
-def play_game():
-    """Controls the game loop and manages player turns."""
+# Initialize the game
+# [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+@app.post("/start")
+def start_game():
     gamelogic.initializeBoard()
-    player_symbol = PLAYER_X
-    display_board(gamelogic.getBoard())
+    return {"message": "Game started", "board": gamelogic.getBoard()}
 
-    while True:
-        print(f"Player {player_symbol}'s turn.")
-        row, col = get_valid_move()
+# Make a move
+@app.post("/move/{row}/{col}")
+def make_move(row: int, col: int, player: str):
+    if gamelogic.playerMakeMove(row, col, player):
+      if gamelogic.hasWon():
+        return {"message": f"Player {player} wins!", "board": gamelogic.getBoard()}
+      if gamelogic.isDraw():
+        return {"message": "It's a draw!", "board": gamelogic.getBoard()}
+      return {"message": "Move successful", "board": gamelogic.getBoard()}
+  
+    return {"message": "Invalid move", "board": gamelogic.getBoard()}
 
-        if gamelogic.playerMakeMove(row, col, player_symbol):
-            display_board(gamelogic.getBoard())
 
-            if gamelogic.hasWon():
-                print(f"Player {player_symbol} wins!")
-                break
-            if gamelogic.isDraw():
-                print("It's a draw!")
-                break
 
-            # Switch player
-            player_symbol = PLAYER_O if player_symbol == PLAYER_X else PLAYER_X
-        else:
-            print("That spot is already taken. Try again.")
-
-play_game()
+# Get the current board state
+@app.get("/board")
+def get_board():
+    return {"board": gamelogic.getBoard()}
