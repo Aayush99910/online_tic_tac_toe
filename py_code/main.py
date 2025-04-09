@@ -35,12 +35,12 @@ def start_game():
 def make_move(row: int, col: int, player: str):
     if gamelogic.playerMakeMove(row, col, player):
       if gamelogic.hasWon():
-        return {"message": f"Player {player} wins!", "board": gamelogic.getBoard()}
+        return {"message": f"Player {player} wins!", "win": True, "valid": True, "draw": False, "board": gamelogic.getBoard()}
       if gamelogic.isDraw():
-        return {"message": "It's a draw!", "board": gamelogic.getBoard()}
-      return {"message": "Move successful", "board": gamelogic.getBoard()}
+        return {"message": "It's a draw!", "win": False, "valid": True, "draw": True, "board": gamelogic.getBoard()}
+      return {"message": "Move successful", "valid": True, "win": False, "draw": False, "board": gamelogic.getBoard()}
   
-    return {"message": "Invalid move", "board": gamelogic.getBoard()}
+    return {"message": "Invalid move", "valid": False, "win": False, "draw": False, "board": gamelogic.getBoard()}
 
 
 
