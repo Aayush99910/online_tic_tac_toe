@@ -4,11 +4,7 @@ const statusElement = document.getElementById("status");
 const startBtn = document.getElementById("start-btn");
 
 
-/* 
-    currently the player is going to be X just like in chess default is white 
-    here default is X
-*/
-let currentPlayer = 'X';
+let youAre;
 let ws;
 
 /* 
@@ -37,12 +33,33 @@ function sendMove(i, j) {
 }
 
 function handleWebSocket() {
-    const roomId = 1;  // Room ID should be passed dynamically (this is just a placeholder)
-    ws = new WebSocket(`ws://localhost:8000/ws/${roomId}`);
+    ws = new WebSocket(`ws://localhost:8000/ws/`);
 
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);  // Parse the incoming data (JSON)
-        console.log(data)
+
+        // player has won 
+        if (data.win){  
+            renderBoard(data.board, true); 
+            statusElement.textContent = data.message;   
+        } else if (data.draw) {
+            renderBoard(data.board, true); 
+            statusElement.textContent = data.message;   
+        } else if (!data.valid) {
+            statusElement.textContent = data.message;
+            if (youAre == data.current_player) {
+                renderBoard(data.board, false);
+            } else {
+                renderBoard(data.board, true);
+            }
+        } else {
+            statusElement.textContent = data.message;
+            if (youAre == data.current_player) {
+                renderBoard(data.board, false);
+            } else {
+                renderBoard(data.board, true);
+            }
+        }
     };
 }
 
@@ -94,8 +111,12 @@ startBtn.addEventListener("click", async () => {
 
         const data = await res.json();
         statusElement.textContent = data.message;
-        renderBoard(data.board);
-
+        youAre = data.you_are;
+        if (youAre == data.current_player) {
+            renderBoard(data.board, false);
+        } else {
+            renderBoard(data.board, true);
+        }
         /* 
             Testing websocket connection:
             we should start websocket only after user has started the game 
