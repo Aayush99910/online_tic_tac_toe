@@ -72,7 +72,7 @@ function handleWebSocket() {
     only if the game has not being won if someone wins then we don't have to have 
     this event listener
 */
-function renderBoard(board, hasWon) {
+function renderBoard(board, isTurn) {
     boardContainer.innerHTML = "";
     for (let i = 0; i < board.length; i++) {
         for (let j = 0; j < board[i].length; j++) {
@@ -81,11 +81,11 @@ function renderBoard(board, hasWon) {
             div.textContent = board[i][j];
 
             // adding the event listener only if the game hasnt been won or drawn
-            if (!hasWon) {
+            if (!isTurn) {
                 div.addEventListener("click", () => sendMove(i, j));
             }
 
-            // adding to this to the parent div
+            // adding this to the parent div
             boardContainer.appendChild(div);
         }
     }
