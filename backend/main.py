@@ -91,12 +91,10 @@ async def websocket_endpoint(websocket: WebSocket):
         room["players_array"].append(websocket)
         room["player_O"] = websocket
 
-
     while True:
         data = json.loads(await websocket.receive_text())
         row = int(data["row"])
         col = int(data["col"])
-        print(row, col)
         await make_move(row, col, websocket)
 
 
