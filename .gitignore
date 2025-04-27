@@ -4,6 +4,4 @@ src/main.cpp
 src/GameLogicExec
 src/GameLogic.exe
 build/
-py_code/__pycache__
-py_code/cli_main.py
-frontend_b/
+backend/__pycache__
