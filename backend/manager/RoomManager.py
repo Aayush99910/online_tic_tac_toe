@@ -66,8 +66,11 @@ class RoomManager:
         # returning that room id 
         return room_id
 
-    def get_room_with_id(self, id: str) -> None:
-        pass
+    def get_room_with_id(self, id: str) -> Optional[str]:
+        if id not in self.rooms:
+            return None 
+        
+        return self.rooms[id]
 
     def delete_room(self) -> None:
         pass 
