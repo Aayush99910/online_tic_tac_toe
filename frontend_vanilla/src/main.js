@@ -3,8 +3,6 @@ const boardContainer = document.getElementById("game-board");
 const statusElement = document.getElementById("status");
 const startBtn = document.getElementById("start-btn");
 
-
-let youAre;
 let ws;
 
 /* 
@@ -37,36 +35,36 @@ function sendMove(i, j) {
     ws.send(JSON.stringify(move));
 }
 
-function handleWebSocket() {
-    ws = new WebSocket(`ws://localhost:8000/ws/`);
+// function handleWebSocket() {
+//     ws = new WebSocket(`ws://localhost:8000/ws/`);
 
-    ws.onmessage = function(event) {
-        const data = JSON.parse(event.data);  // Parse the incoming data (JSON)
+//     ws.onmessage = function(event) {
+//         const data = JSON.parse(event.data);  // Parse the incoming data (JSON)
 
-        // player has won 
-        if (data.win){  
-            renderBoard(data.board, true); 
-            statusElement.textContent = data.message;   
-        } else if (data.draw) {
-            renderBoard(data.board, true); 
-            statusElement.textContent = data.message;   
-        } else if (!data.valid) {
-            statusElement.textContent = data.message;
-            if (youAre == data.current_player) {
-                renderBoard(data.board, false);
-            } else {
-                renderBoard(data.board, true);
-            }
-        } else {
-            statusElement.textContent = data.message;
-            if (youAre == data.current_player) {
-                renderBoard(data.board, false);
-            } else {
-                renderBoard(data.board, true);
-            }
-        }
-    };
-}
+//         // player has won 
+//         if (data.win){  
+//             renderBoard(data.board, true); 
+//             statusElement.textContent = data.message;   
+//         } else if (data.draw) {
+//             renderBoard(data.board, true); 
+//             statusElement.textContent = data.message;   
+//         } else if (!data.valid) {
+//             statusElement.textContent = data.message;
+//             if (youAre == data.current_player) {
+//                 renderBoard(data.board, false);
+//             } else {
+//                 renderBoard(data.board, true);
+//             }
+//         } else {
+//             statusElement.textContent = data.message;
+//             if (youAre == data.current_player) {
+//                 renderBoard(data.board, false);
+//             } else {
+//                 renderBoard(data.board, true);
+//             }
+//         }
+//     };
+// }
 
 
 /*
@@ -105,8 +103,8 @@ function renderBoard(board, isTurn) {
 */
 startBtn.addEventListener("click", async () => {
     try {
-        const userId = sessionStorage.getItem('userId')
-        const ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+        const userId = sessionStorage.getItem('userId');
+        ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
         
         // handling the wsopen
         ws.onopen = () => {
@@ -116,10 +114,15 @@ startBtn.addEventListener("click", async () => {
         // handling in coming messages
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+            const userId = sessionStorage.getItem('userId');
             if (data.status == 1) {
                 statusElement.innerText = data.message;
             } else {
-                renderBoard(data.board, false);
+                if (data.symbol[userId] === data.current_player) {
+                    renderBoard(data.board, true);
+                } else {
+                    renderBoard(data.board, false);
+                }
                 statusElement.innerText = data.message;
             }
         }
