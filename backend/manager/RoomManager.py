@@ -30,6 +30,7 @@ class RoomManager:
         self.users_id = set()
         self.joined_players_id = set()
         self.player_queue = deque()
+        self.websocket_to_room_id = {}
 
     def generate_user_id(self) -> str:
         unique_id = str(uuid.uuid4())
@@ -59,9 +60,18 @@ class RoomManager:
         self.rooms[room_id] = {
             "player1": player1_id,
             "player2": player2_id,
+            "symbol": {
+                player1_id: "X",
+                player2_id: "O"
+            },
+            "current_player": "X",
             "board": board,
             "websocket_objects": [player1_websocket_object, player2_websocket_object]
         }
+
+        # mapping websocket to room_id
+        self.websocket_to_room_id[player1_websocket_object] = room_id
+        self.websocket_to_room_id[player2_websocket_object] = room_id
         
         # returning that room id 
         return room_id
