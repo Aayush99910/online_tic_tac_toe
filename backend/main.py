@@ -2,6 +2,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from manager.RoomManager import RoomManager
+import json 
 
 app = FastAPI()
 
@@ -17,9 +18,22 @@ app.add_middleware(
 # global room manager object
 app.room_manager = RoomManager()
 
-# # make move function 
-# async def make_move(row: int, col: int, websocket: WebSocket):
-#     current_player = room["current_player"]
+# make move function 
+async def make_move(row: int, col: int, websocket: WebSocket):
+    print(row, col)
+    # # getting that room id 
+    # room_id = app.room_manager.websocket_to_room_id[websocket]
+    # if not room_id:
+    #     await websocket.send_json({"valid": False, "message": "Room not found."})
+    #     return
+    
+    # # getting that room
+    # room = app.room_manager.get_room_with_id(room_id)
+    # if not room:
+    #     await websocket.send_json({"valid": False, "message": "Invalid room."})
+    #     return
+    
+    # current_player = room["current_player"]
 
 #     if gamelogic.playerMakeMove(row, col, current_player):
 #         if gamelogic.hasWon():
@@ -89,14 +103,15 @@ async def websocket_endpoint(player_id: str, player_websocket: WebSocket):
         if room_id:
             # getting the room information 
             room = app.room_manager.get_room_with_id(room_id)
+
             # start the game
             for websocket_object in room["websocket_objects"]:
                 await websocket_object.send_json({
                     "status": 0,
                     "message": "Game started",
                     "board": room["board"].getBoard(),
-                    "player1": room["player1"],
-                    "player2": room["player2"]
+                    "symbol": room["symbol"],
+                    "current_player": room["current_player"]
                 })
 
         else:
@@ -108,7 +123,10 @@ async def websocket_endpoint(player_id: str, player_websocket: WebSocket):
 
         try:
             while True:
-                data = await player_websocket.receive_json()
+                data = json.loads(await player_websocket.receive_text())
+                row = int(data['row'])
+                col = int(data['col'])
+                await make_move(row, col, player_websocket)
         except WebSocketDisconnect:
             pass 
             # app.room_manager.remove_from_queue(player_id)
