@@ -56,7 +56,6 @@ class RoomManager:
 
         # create a board and then 
         # add these information in a room
-        board = gamelogic.GameBoard()
         self.rooms[room_id] = {
             "player1": player1_id,
             "player2": player2_id,
@@ -65,7 +64,7 @@ class RoomManager:
                 player2_id: "O"
             },
             "current_player": "X",
-            "board": board,
+            "board": gamelogic.GameBoard(),
             "websocket_objects": [player1_websocket_object, player2_websocket_object]
         }
 
@@ -81,7 +80,13 @@ class RoomManager:
             return None 
         
         return self.rooms[id]
+    
+    def get_room_id_with_websocket(self, websocket: object) -> Optional[str]:
+        if websocket in self.websocket_to_room_id:
+            return self.websocket_to_room_id[websocket]
 
+        return None 
+        
     def delete_room(self) -> None:
         pass 
 
