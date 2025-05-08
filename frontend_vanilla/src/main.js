@@ -4,6 +4,7 @@ const statusElement = document.getElementById("status");
 const startBtn = document.getElementById("start-btn");
 
 let ws;
+let userId;
 
 /* 
   When the page loads we want to call the the '/' endpoint from the backend
@@ -16,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const data = await response.json();
 
         // adding the user id in a sessionStorage so it is only valid during that session
-        const userId = data.user_id;
+        userId = data.user_id;
         sessionStorage.setItem('userId', userId);
         statusElement.textContent = data.message;
         
@@ -30,41 +31,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 function sendMove(i, j) {
     const move = { 
         row: i, 
-        col: j
+        col: j,
+        user_id: userId
     };  
     ws.send(JSON.stringify(move));
 }
 
-// function handleWebSocket() {
-//     ws = new WebSocket(`ws://localhost:8000/ws/`);
+function handleServerMessage(data, userId) {
+    if (data.status === 1) {
+        statusElement.innerText = data.message;
+        return
+    }
+    
+    statusElement.innerText = data.message;
 
-//     ws.onmessage = function(event) {
-//         const data = JSON.parse(event.data);  // Parse the incoming data (JSON)
+    if (data.win || data.draw) {
+        renderBoard(data.board, false); // No more moves
+    } else {
+        const isPlayerTurn = data.symbol[userId] === data.current_player;
+        renderBoard(data.board, isPlayerTurn);
+    }
+}
 
-//         // player has won 
-//         if (data.win){  
-//             renderBoard(data.board, true); 
-//             statusElement.textContent = data.message;   
-//         } else if (data.draw) {
-//             renderBoard(data.board, true); 
-//             statusElement.textContent = data.message;   
-//         } else if (!data.valid) {
-//             statusElement.textContent = data.message;
-//             if (youAre == data.current_player) {
-//                 renderBoard(data.board, false);
-//             } else {
-//                 renderBoard(data.board, true);
-//             }
-//         } else {
-//             statusElement.textContent = data.message;
-//             if (youAre == data.current_player) {
-//                 renderBoard(data.board, false);
-//             } else {
-//                 renderBoard(data.board, true);
-//             }
-//         }
-//     };
-// }
 
 
 /*
@@ -83,8 +71,8 @@ function renderBoard(board, isTurn) {
             div.className = "cell";
             div.textContent = board[i][j];
 
-            // adding the event listener only if the game hasnt been won or drawn
-            if (!isTurn) {
+            // adding the event listener only if it is their turn
+            if (isTurn) {
                 div.addEventListener("click", () => sendMove(i, j));
             }
 
@@ -103,7 +91,7 @@ function renderBoard(board, isTurn) {
 */
 startBtn.addEventListener("click", async () => {
     try {
-        const userId = sessionStorage.getItem('userId');
+        userId = sessionStorage.getItem('userId');
         ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
         
         // handling the wsopen
@@ -114,18 +102,8 @@ startBtn.addEventListener("click", async () => {
         // handling in coming messages
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            const userId = sessionStorage.getItem('userId');
-            if (data.status == 1) {
-                statusElement.innerText = data.message;
-            } else {
-                if (data.symbol[userId] === data.current_player) {
-                    renderBoard(data.board, true);
-                } else {
-                    renderBoard(data.board, false);
-                }
-                statusElement.innerText = data.message;
-            }
-        }
+            handleServerMessage(data, userId);
+        };
 
         ws.onerror = (err) => {
             console.error("WebSocket error:", err);
