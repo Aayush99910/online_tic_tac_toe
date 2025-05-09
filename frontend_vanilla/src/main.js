@@ -53,8 +53,6 @@ function handleServerMessage(data, userId) {
     }
 }
 
-
-
 /*
     render board function that takes in two argument first is the board itself 
     that we are going to render board variable is an array that will be turned 
@@ -70,6 +68,13 @@ function renderBoard(board, isTurn) {
             const div = document.createElement("div");
             div.className = "cell";
             div.textContent = board[i][j];
+            
+            // Add color styling based on cell content
+            if (div.textContent === 'X') {
+                div.style.color = '#E64833';
+            } else if (div.textContent === 'O') {
+                div.style.color = '#90AEAD';
+            }
 
             // adding the event listener only if it is their turn
             if (isTurn) {
