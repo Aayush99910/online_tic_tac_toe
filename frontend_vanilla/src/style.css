@@ -66,7 +66,7 @@ h1 {
   animation: pulse 1.5s infinite;
 }
 
-#start-btn {
+#start-btn, #watch-btn {
   background-color: var(--primary);
   color: white;
   border: none;
@@ -82,12 +82,12 @@ h1 {
   letter-spacing: 1px;
 }
 
-#start-btn:hover {
+#start-btn:hover, #watch-btn:hover {
   background-color: #1b363f; /* Slightly darker primary */
   transform: translateY(-2px);
 }
 
-#start-btn:active {
+#start-btn:active, #watch-btn:active {
   transform: translateY(1px);
 }
 
@@ -207,5 +207,63 @@ h1 {
 
   .cell {
     font-size: 40px;
+  }
+}
+
+/* Room ID Input and Submit Button Styling */
+#room-id-input {
+  display: none;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  outline: none;
+  margin: 1rem 0;
+  width: 250px;
+  max-width: 90%;
+  box-shadow: 0 4px 6px var(--shadow);
+  transition: border-color 0.3s ease;
+}
+
+#room-id-input:focus {
+  border-color: var(--secondary);
+}
+
+#submit-room-id {
+  display: none;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#submit-room-id:hover {
+  background-color: #1b363f;
+  transform: translateY(-2px);
+}
+
+#submit-room-id:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Adjustments for Input and Submit Button */
+@media (max-width: 500px) {
+  #room-id-input {
+    width: 200px;
+    font-size: 0.9rem;
+  }
+
+  #submit-room-id {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
   }
 }
