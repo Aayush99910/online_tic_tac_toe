@@ -1,7 +1,10 @@
 // getting all the elements
 const boardContainer = document.getElementById("game-board");
 const statusElement = document.getElementById("status");
+const watchBtn = document.getElementById("watch-btn");
 const startBtn = document.getElementById("start-btn");
+const roomInput = document.getElementById("room-id-input");
+const submitRoomBtn = document.getElementById("submit-room-id");
 
 let ws;
 let userId;
@@ -37,7 +40,7 @@ function sendMove(i, j) {
     ws.send(JSON.stringify(move));
 }
 
-function handleServerMessage(data, userId) {
+function handleServerMessageForPlayers(data, userId) {
     if (data.status === 1) {
         statusElement.innerText = data.message;
         return
@@ -97,17 +100,19 @@ function renderBoard(board, isTurn) {
 startBtn.addEventListener("click", async () => {
     try {
         userId = sessionStorage.getItem('userId');
-        ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+        ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}`);
         
         // handling the wsopen
         ws.onopen = () => {
             startBtn.style.display = 'none';
+            watchBtn.style.display = 'none';
         }
 
         // handling in coming messages
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            handleServerMessage(data, userId);
+            console.log(data);
+            handleServerMessageForPlayers(data, userId);
         };
 
         ws.onerror = (err) => {
@@ -118,3 +123,45 @@ startBtn.addEventListener("click", async () => {
         console.log("Error", err);
     }
 });
+
+
+/* 
+    event listener for watch game it needs room_id to work 
+    this will be like a private room that people will create and 
+    they will be given room id. This can be copied and then players 
+    can join the room and watch other two player play.
+*/
+watchBtn.addEventListener("click", () => {
+    roomInput.style.display = "inline-block";
+    submitRoomBtn.style.display = "inline-block";
+    watchBtn.style.display = "none";
+    startBtn.style.display = "none";
+});
+
+submitRoomBtn.addEventListener('click', async () => {
+    const roomIdInput = roomInput.value;
+    try {
+        userId = sessionStorage.getItem('userId');
+        ws = new WebSocket(`ws://localhost:8000/ws/watch/${userId}?room_id=${roomIdInput}`);
+        
+        // handling the wsopen
+        ws.onopen = () => {
+            roomInput.style.display = 'none';
+            submitRoomBtn.style.display = 'none';
+        }
+
+        // handling in coming messages
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            statusElement.textContent = data.message;
+            renderBoard(data.board, false);
+        };
+
+        ws.onerror = (err) => {
+            console.error("WebSocket error:", err);
+        }; 
+    }
+    catch(err) {
+        console.log("Error", err);
+    }
+})
