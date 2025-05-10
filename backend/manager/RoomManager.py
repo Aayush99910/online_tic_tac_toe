@@ -63,9 +63,12 @@ class RoomManager:
                 player1_id: "X",
                 player2_id: "O"
             },
+            "active_players": [player1_id, player2_id],
+            "spectating_players": [],
+            "spectating_players_websocket_objects": [],
             "current_player": "X",
             "board": gamelogic.GameBoard(),
-            "websocket_objects": [player1_websocket_object, player2_websocket_object]
+            "active_players_websocket_objects": [player1_websocket_object, player2_websocket_object]
         }
 
         # mapping websocket to room_id
@@ -110,4 +113,14 @@ class RoomManager:
         self.player_queue.append((player_id, player_websocket_obj1)) 
         self.joined_players_id.add(player_id)
         return None 
+    
+    def add_player_to_room(self, player_id: str, room_id: str, player_websocket_obj1) -> None:
+        # getting that room from room_id 
+        room = self.rooms[room_id] 
+
+        # adding that player to the room 
+        room["spectating_players"].append(player_id)
+
+        # adding this player's websocket object inside the room
+        room["spectating_players_websocket_objects"].append(player_websocket_obj1)
 
