@@ -1,8 +1,9 @@
 # type: ignore
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from manager.RoomManager import RoomManager
 import json 
+import asyncio
 
 app = FastAPI()
 
@@ -71,9 +72,15 @@ async def make_move(row: int, col: int, user_id: str, websocket: WebSocket):
                 # normal move
                 res =  build_response(f"Player {symbol_to_move} made a move!", room, False, False, True)
                 
-            # boardcast to all players in that room
-            for websocket_object in room["websocket_objects"]:
+            # boardcast to all active players in that room
+            for websocket_object in room["active_players_websocket_objects"]:    
                 await websocket_object.send_json(res)
+
+            for websocket_object in room["spectating_players_websocket_objects"]:
+                await websocket_object.send_json({
+                    "message": res["message"],
+                    "board": res["board"]
+                })
         else:
             res = build_response("Invalid move. Please try again!", room, False, False, False)
             await websocket.send_json(res)
@@ -94,8 +101,8 @@ def home_page():
 
 # Initialize the game
 # [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
-@app.websocket("/ws/{player_id}")
-async def websocket_endpoint(player_id: str, player_websocket: WebSocket):
+@app.websocket("/ws/play/{player_id}")
+async def start_game(player_id: str, player_websocket: WebSocket):
     try:
         # accept websocket request
         await player_websocket.accept()
@@ -109,13 +116,14 @@ async def websocket_endpoint(player_id: str, player_websocket: WebSocket):
             room = app.room_manager.get_room_with_id(room_id)
 
             # start the game
-            for websocket_object in room["websocket_objects"]:
+            for websocket_object in room["active_players_websocket_objects"]:
                 await websocket_object.send_json({
                     "status": 0,
                     "message": "Game started",
                     "board": room["board"].getBoard(),
                     "symbol": room["symbol"],
-                    "current_player": room["current_player"]
+                    "current_player": room["current_player"],
+                    "room_id": room_id # Testing purpose will be sending only when they create a room and not everytime
                 })
 
         else:
@@ -141,4 +149,42 @@ async def websocket_endpoint(player_id: str, player_websocket: WebSocket):
         raise HTTPException(status_code=500, detail=f"Game logic module issue: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
-    
+
+@app.websocket("/ws/watch/{player_id}")
+async def watch_game(player_id: str, player_websocket: WebSocket, room_id: str = Query(...)):
+    try:
+        # accept websocket request
+        await player_websocket.accept()
+        
+        if room_id:
+            # adding this player to that room 
+            app.room_manager.add_player_to_room(player_id, room_id, player_websocket)
+            
+            # getting that current room
+            room = app.room_manager.get_room_with_id(room_id)
+            await player_websocket.send_json({
+                "message": f"Watching room: {room_id}",
+                "board": room["board"].getBoard()  
+            })
+
+        else:
+            # there is no such room available right now
+            await player_websocket.send_json({
+                "status": 1,
+                "message": "Invalid room id. Please try again"
+            })
+
+            return
+
+        try:
+            while True:
+                await asyncio.sleep(10)
+        except WebSocketDisconnect:
+            pass 
+            # app.room_manager.remove_from_queue(player_id)
+    except AttributeError as e:
+        raise HTTPException(status_code=500, detail=f"Function missing: {str(e)}")
+    except NameError as e:
+        raise HTTPException(status_code=500, detail=f"Game logic module issue: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
