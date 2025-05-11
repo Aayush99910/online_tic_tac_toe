@@ -9,11 +9,11 @@ app = FastAPI()
 
 # Allow CORS for all domains (you can restrict this if you need to)
 app.add_middleware(
-   CORSMiddleware,
-   allow_origins=["*"],  # Allows all origins (use specific URLs in production)
-   allow_credentials=True,
-   allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-   allow_headers=["*"],  # Allows all headers
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Explicitly allow your frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # global room manager object
@@ -188,3 +188,61 @@ async def watch_game(player_id: str, player_websocket: WebSocket, room_id: str =
         raise HTTPException(status_code=500, detail=f"Game logic module issue: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
+    
+
+@app.post("/quit/{player_id}")
+async def quit_game(player_id: str) -> None:
+    # things to do 
+    # get the room id where this player was playing 
+    room_id = app.room_manager.get_room_id_with_user_id(player_id)
+
+    # now get the room 
+    room = app.room_manager.get_room_with_id(room_id)
+
+    # and then remove this player from that room also remove that websocket as 
+    # it is not needed
+    quitting_ws = room[player_id]
+    room["active_players"].remove(player_id) # removing that player
+    room["active_players_websocket_objects"].remove(quitting_ws) # removing that websocket
+    del room[player_id]
+
+    # Notify the remaining player (if any)
+    for remaining_id in room["active_players"]:
+        remaining_ws = room[remaining_id]
+        
+        # remove the other player as well from the room and show him appropiate message
+        await remaining_ws.send_json({
+            "status": 2,
+            "message": f"Opponent has left the game.",
+            "action": "opponent_left"
+        })
+
+        try:
+            await remaining_ws.close()
+        except Exception as e:
+            print(f"Error closing remaining player's WebSocket: {e}")
+
+        room["active_players"].remove(remaining_id) # removing that player
+        room["active_players_websocket_objects"].remove(remaining_ws) # removing that websocket
+        del room[remaining_id]
+
+        # deleting the mapping from player_id to room_id for this player
+        app.room_manager.delete_user_id_room_id_mapping(remaining_id)
+
+        # deleting the mapping from websocket to room_id
+        app.room_manager.delete_websocket_room_id_mapping(remaining_ws)
+
+    # Close the quitting player's websocket
+    try:
+        await remaining_ws.close()
+    except Exception as e:
+        print(f"Error closing remaining player's WebSocket: {e}")
+
+    # deleting the mapping from websocket to room_id
+    app.room_manager.delete_websocket_room_id_mapping(quitting_ws)
+
+    # deleting the mapping from player_id to room_id
+    app.room_manager.delete_user_id_room_id_mapping(player_id)
+    
+    # deleting that room 
+    app.room_manager.delete_room_with_room_id(room_id)
