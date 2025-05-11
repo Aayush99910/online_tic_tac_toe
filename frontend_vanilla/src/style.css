@@ -267,3 +267,62 @@ h1 {
     font-size: 1rem;
   }
 }
+
+/* Control Buttons Container */
+#control-buttons {
+  display: none; /* Hidden by default */
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Quit and Reset Buttons Styling */
+#quit-game-btn, #reset-game-btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#quit-game-btn:hover, #reset-game-btn:hover {
+  background-color: #1b363f;
+  transform: translateY(-2px);
+}
+
+#quit-game-btn:active, #reset-game-btn:active {
+  transform: translateY(1px);
+}
+
+/* Leave Game Button Styling */
+#leave-game-btn {
+  background-color: var(--secondary); /* Use a different color to distinguish it */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#leave-game-btn:hover {
+  background-color: #b03120; /* Darker tone for hover */
+  transform: translateY(-2px);
+}
+
+#leave-game-btn:active {
+  transform: translateY(1px);
+}
