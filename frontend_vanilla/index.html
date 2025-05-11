@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe</title>
+  <link rel="stylesheet" href="src/style.css" />
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="status"></div>
+  <button class="start" id="start-btn">Start Game</button>
+  <button class="watch" id="watch-btn">Watch a Game</button>
+  <input type="text" id="room-id-input" placeholder="Enter Room ID" style="display:none; margin-top: 10px;"/>
+  <button id="submit-room-id" style="display:none;">Join Room</button>
+  <div class="board" id="game-board"></div>
+  <div id="control-buttons" style="display: none;">
+    <button id="quit-game-btn">Quit Game</button>
+    <button id="reset-game-btn">Restart Game</button>
+    <button id="leave-game-btn" style="display: none;">Leave Game</button>
+  </div>
+  <script src="src/main.js"></script>
+</body>
+</html>

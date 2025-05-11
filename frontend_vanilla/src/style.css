@@ -1,0 +1,328 @@
+/* Matte Tic Tac Toe Styling */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
+:root {
+  --primary: #244855;       /* Deep Blue-Green */
+  --secondary: #E64833;     /* Vibrant Red-Orange */
+  --accent1: #874F41;       /* Muted Brown-Red */
+  --accent2: #90AEAD;       /* Soft Teal-Green */
+  --background: #f5f5f5;
+  --card: #ffffff;
+  --board-bg: #e5e7eb;
+  --text: #1f2937;
+  --text-light: #4b5563;
+  --x-color: var(--secondary);  /* Red-Orange for X */
+  --o-color: var(--accent2);    /* Teal-Green for O */
+  --shadow: rgba(0, 0, 0, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+#status {
+  font-size: 1.2rem;
+  height: 1.5rem;
+  margin: 1rem 0;
+  color: var(--text-light);
+  font-weight: 600;
+  text-align: center;
+}
+
+.status-player-x {
+  color: var(--x-color);
+}
+
+.status-player-o {
+  color: var(--o-color);
+}
+
+.status-winner {
+  font-size: 1.5rem;
+  font-weight: 700;
+  animation: pulse 1.5s infinite;
+}
+
+#start-btn, #watch-btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#start-btn:hover, #watch-btn:hover {
+  background-color: #1b363f; /* Slightly darker primary */
+  transform: translateY(-2px);
+}
+
+#start-btn:active, #watch-btn:active {
+  transform: translateY(1px);
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 10px;
+  margin: 0 auto;
+  max-width: 400px;
+  width: 100%;
+  background-color: var(--board-bg);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px var(--shadow);
+}
+
+.cell {
+  background-color: var(--card);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px var(--shadow);
+  aspect-ratio: 1/1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 60px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* X and O colors */
+.cell:contains('X') {
+  color: var(--x-color);
+}
+
+.cell:contains('O') {
+  color: var(--o-color);
+}
+
+/* Default cell styling */
+.cell:empty {
+  font-size: 0; /* Hide when empty */
+}
+
+/* Hover effects */
+.cell:hover {
+  box-shadow: 0 4px 8px var(--shadow);
+}
+
+.cell:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+/* Winner styling */
+.win-cell {
+  animation: winner-pulse 1.5s infinite;
+  border: 2px solid var(--secondary);
+  box-shadow: 0 0 10px var(--secondary);
+}
+
+/* Animations */
+@keyframes winner-pulse {
+  0% {
+    box-shadow: 0 0 0 0px rgba(230, 72, 51, 0.5); /* Secondary color glow */
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(230, 72, 51, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(230, 72, 51, 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 500px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  #game-board {
+    max-width: 320px;
+  }
+
+  .cell {
+    font-size: 50px;
+  }
+}
+
+@media (max-width: 350px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  #game-board {
+    max-width: 280px;
+  }
+
+  #start-btn {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .cell {
+    font-size: 40px;
+  }
+}
+
+/* Room ID Input and Submit Button Styling */
+#room-id-input {
+  display: none;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  outline: none;
+  margin: 1rem 0;
+  width: 250px;
+  max-width: 90%;
+  box-shadow: 0 4px 6px var(--shadow);
+  transition: border-color 0.3s ease;
+}
+
+#room-id-input:focus {
+  border-color: var(--secondary);
+}
+
+#submit-room-id {
+  display: none;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#submit-room-id:hover {
+  background-color: #1b363f;
+  transform: translateY(-2px);
+}
+
+#submit-room-id:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Adjustments for Input and Submit Button */
+@media (max-width: 500px) {
+  #room-id-input {
+    width: 200px;
+    font-size: 0.9rem;
+  }
+
+  #submit-room-id {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Control Buttons Container */
+#control-buttons {
+  display: none; /* Hidden by default */
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Quit and Reset Buttons Styling */
+#quit-game-btn, #reset-game-btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#quit-game-btn:hover, #reset-game-btn:hover {
+  background-color: #1b363f;
+  transform: translateY(-2px);
+}
+
+#quit-game-btn:active, #reset-game-btn:active {
+  transform: translateY(1px);
+}
+
+/* Leave Game Button Styling */
+#leave-game-btn {
+  background-color: var(--secondary); /* Use a different color to distinguish it */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#leave-game-btn:hover {
+  background-color: #b03120; /* Darker tone for hover */
+  transform: translateY(-2px);
+}
+
+#leave-game-btn:active {
+  transform: translateY(1px);
+}
