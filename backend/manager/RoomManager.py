@@ -31,6 +31,7 @@ class RoomManager:
         self.joined_players_id = set()
         self.player_queue = deque()
         self.websocket_to_room_id = {}
+        self.user_id_to_room_id = {}
 
     def generate_user_id(self) -> str:
         unique_id = str(uuid.uuid4())
@@ -59,6 +60,8 @@ class RoomManager:
         self.rooms[room_id] = {
             "player1": player1_id,
             "player2": player2_id,
+            player1_id: player1_websocket_object,
+            player2_id: player2_websocket_object,           
             "symbol": {
                 player1_id: "X",
                 player2_id: "O"
@@ -70,6 +73,10 @@ class RoomManager:
             "board": gamelogic.GameBoard(),
             "active_players_websocket_objects": [player1_websocket_object, player2_websocket_object]
         }
+
+        # mapping user_id to room_id
+        self.user_id_to_room_id[player1_id] = room_id
+        self.user_id_to_room_id[player2_id] = room_id
 
         # mapping websocket to room_id
         self.websocket_to_room_id[player1_websocket_object] = room_id
@@ -89,10 +96,25 @@ class RoomManager:
             return self.websocket_to_room_id[websocket]
 
         return None 
-        
-    def delete_room(self) -> None:
-        pass 
+    
+    def get_room_id_with_user_id(self, user_id: str) -> Optional[str]:
+        if user_id in self.user_id_to_room_id:
+            return self.user_id_to_room_id[user_id]
 
+        return None 
+        
+    def delete_room_with_room_id(self, room_id: str):
+        if room_id in self.rooms:
+            del self.rooms[room_id]
+
+    def delete_user_id_room_id_mapping(self, user_id: str):
+        if user_id in self.user_id_to_room_id:
+            del self.user_id_to_room_id[user_id]
+    
+    def delete_websocket_room_id_mapping(self, websocket: object):
+        if websocket in self.websocket_to_room_id:
+            del self.websocket_to_room_id[websocket]
+            
     def join_room(self) -> None:
         pass 
 
