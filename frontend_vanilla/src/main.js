@@ -50,6 +50,16 @@ function handleServerMessageForPlayers(data, userId) {
         controlButtons.style.display = 'none'; 
         return
     }
+
+    if (data.status == 2) {
+        // return this player back to home
+        statusElement.innerText = data.message;
+        controlButtons.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        watchBtn.style.display = 'inline-block';
+        boardContainer.innerHTML = '';
+        return 
+    }
     
     statusElement.innerText = data.message;
 
@@ -175,6 +185,33 @@ submitRoomBtn.addEventListener('click', async () => {
         }; 
     }
     catch(err) {
+        console.log("Error", err);
+    }
+})
+
+
+/* 
+    Quit Game Button should quit the game for that player
+    it will call backend endpoint that handles quitting
+*/
+quitBtn.addEventListener('click', async () => {
+    try {
+        const userId = sessionStorage.getItem('userId');
+        const response = await fetch(`http://localhost:8000/quit/${userId}`, { method: 'POST' });
+        
+        // closing the websocket connection
+        if (ws) {
+            ws.close();
+        }
+        
+        // Reset UI state
+        controlButtons.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        watchBtn.style.display = 'inline-block';
+        boardContainer.innerHTML = '';
+        statusElement.textContent = 'You have left the game.';
+    }
+    catch(err){
         console.log("Error", err);
     }
 })
