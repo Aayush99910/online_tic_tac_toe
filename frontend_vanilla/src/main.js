@@ -5,6 +5,10 @@ const watchBtn = document.getElementById("watch-btn");
 const startBtn = document.getElementById("start-btn");
 const roomInput = document.getElementById("room-id-input");
 const submitRoomBtn = document.getElementById("submit-room-id");
+const controlButtons = document.getElementById("control-buttons"); // New wrapper for Quit & Reset
+const quitBtn = document.getElementById("quit-game-btn");
+const resetBtn = document.getElementById("reset-game-btn");
+const leaveBtn = document.getElementById("leave-game-btn");
 
 let ws;
 let userId;
@@ -43,6 +47,7 @@ function sendMove(i, j) {
 function handleServerMessageForPlayers(data, userId) {
     if (data.status === 1) {
         statusElement.innerText = data.message;
+        controlButtons.style.display = 'none'; 
         return
     }
     
@@ -50,8 +55,16 @@ function handleServerMessageForPlayers(data, userId) {
 
     if (data.win || data.draw) {
         renderBoard(data.board, false); // No more moves
+        controlButtons.style.display = 'flex';
+        quitBtn.style.display = 'none';
+        resetBtn.style.display = 'inline-block';
+        leaveBtn.style.display = 'inline-block';
     } else {
         const isPlayerTurn = data.symbol[userId] === data.current_player;
+        controlButtons.style.display = 'flex';
+        quitBtn.style.display = 'inline-block';
+        resetBtn.style.display = 'none';
+        leaveBtn.style.display = 'none';
         renderBoard(data.board, isPlayerTurn);
     }
 }
