@@ -204,6 +204,7 @@ async def quit_game(player_id: str) -> None:
     quitting_ws = room[player_id]
     room["active_players"].remove(player_id) # removing that player
     room["active_players_websocket_objects"].remove(quitting_ws) # removing that websocket
+    app.room_manager.remove_player_from_game(player_id)
     del room[player_id]
 
     # Notify the remaining player (if any)
@@ -224,6 +225,7 @@ async def quit_game(player_id: str) -> None:
 
         room["active_players"].remove(remaining_id) # removing that player
         room["active_players_websocket_objects"].remove(remaining_ws) # removing that websocket
+        app.room_manager.remove_player_from_game(remaining_id)
         del room[remaining_id]
 
         # deleting the mapping from player_id to room_id for this player
