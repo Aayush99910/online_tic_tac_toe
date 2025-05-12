@@ -29,6 +29,7 @@ class RoomManager:
         self.rooms_id = set()
         self.users_id = set()
         self.joined_players_id = set()
+        self.in_game_players_id = set()
         self.player_queue = deque()
         self.websocket_to_room_id = {}
         self.user_id_to_room_id = {}
@@ -74,6 +75,10 @@ class RoomManager:
             "active_players_websocket_objects": [player1_websocket_object, player2_websocket_object]
         }
 
+        # adding these players to in game
+        self.in_game_players_id.add(player1_id)
+        self.in_game_players_id.add(player2_id)
+
         # mapping user_id to room_id
         self.user_id_to_room_id[player1_id] = room_id
         self.user_id_to_room_id[player2_id] = room_id
@@ -118,9 +123,21 @@ class RoomManager:
     def join_room(self) -> None:
         pass 
 
+    def remove_player_from_game(self, player_id: str) -> Optional[str]:
+        if player_id in self.in_game_players_id:
+            self.in_game_players_id.remove(player_id)
+        
+        return None 
+
+    def remove_player_from_all_players(self, player_id: str)  -> Optional[str]:
+        if player_id in self.joined_players_id:
+            self.joined_players_id.remove(player_id)
+        
+        return None  
+
     def add_player_to_queue(self, player_id: str, player_websocket_obj1) -> Optional[str]: 
         # if the same player then just return 
-        if player_id in self.joined_players_id:
+        if player_id in self.in_game_players_id:
             return None
         
         # checking if there is already a player in the queue
