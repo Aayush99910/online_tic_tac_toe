@@ -1,11 +1,15 @@
-// getting all the elements
 const boardContainer = document.getElementById("game-board");
 const statusElement = document.getElementById("status");
+const playRandomBtn = document.getElementById("play-random-btn");
+const hostRoomBtn = document.getElementById("host-room-btn");
 const watchBtn = document.getElementById("watch-btn");
-const startBtn = document.getElementById("start-btn");
+const privateControls = document.getElementById("private-controls");
+const createRoomBtn = document.getElementById("create-room-btn");
+const joinRoomToPlayBtn = document.getElementById("join-room-to-play-btn");
+const roomInputContainer = document.getElementById("room-input-container");
 const roomInput = document.getElementById("room-id-input");
 const submitRoomBtn = document.getElementById("submit-room-id");
-const controlButtons = document.getElementById("control-buttons"); // New wrapper for Quit & Reset
+const controlButtons= document.getElementById("control-buttons");
 const quitBtn = document.getElementById("quit-game-btn");
 const resetBtn = document.getElementById("reset-game-btn");
 const leaveBtn = document.getElementById("leave-game-btn");
@@ -52,6 +56,11 @@ function handleServerMessageForPlayers(data, userId) {
     }
 
     if (data.status == 2) {
+        // closing the ws 
+        if (ws) {
+            ws.close();
+        }
+        
         // return this player back to home
         statusElement.innerText = data.message;
         controlButtons.style.display = 'none';
@@ -77,6 +86,24 @@ function handleServerMessageForPlayers(data, userId) {
         leaveBtn.style.display = 'none';
         renderBoard(data.board, isPlayerTurn);
     }
+}
+
+
+
+function handleServerMessageForSpectators(data) {
+    if (data.status === 1) {
+        // closing the ws 
+        if (ws) {
+            ws.close();
+        }
+
+        statusElement.innerText = data.message;
+        return
+    }
+
+    statusElement.textContent = data.message;
+    renderBoard(data.board, false);
+
 }
 
 /*
@@ -120,15 +147,18 @@ function renderBoard(board, isTurn) {
     and whatever that endpoint returns we are going to print it to the user
     and then we are rendering the board for the user to interact with 
 */
-startBtn.addEventListener("click", async () => {
+playRandomBtn.addEventListener("click", async () => {
     try {
         userId = sessionStorage.getItem('userId');
         ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}`);
         
         // handling the wsopen
         ws.onopen = () => {
-            startBtn.style.display = 'none';
-            watchBtn.style.display = 'none';
+            playRandomBtn.style.display = 'none';
+            hostRoomBtn.style.display = "none";
+            watchBtn.style.display = "none";
+            privateControls.style.display = "none";
+            roomInputContainer.style.display = "none";
         }
 
         // handling in coming messages
@@ -155,10 +185,12 @@ startBtn.addEventListener("click", async () => {
     can join the room and watch other two player play.
 */
 watchBtn.addEventListener("click", () => {
-    roomInput.style.display = "inline-block";
-    submitRoomBtn.style.display = "inline-block";
+    roomInputContainer.style.display = "flex";
+    playRandomBtn.style.display = "none";
+    hostRoomBtn.style.display = "none";
+    privateControls.style.display = "none";
     watchBtn.style.display = "none";
-    startBtn.style.display = "none";
+    roomInputContainer.style.display  = "flex"; 
 });
 
 submitRoomBtn.addEventListener('click', async () => {
@@ -169,15 +201,18 @@ submitRoomBtn.addEventListener('click', async () => {
         
         // handling the wsopen
         ws.onopen = () => {
-            roomInput.style.display = 'none';
-            submitRoomBtn.style.display = 'none';
+            roomInputContainer.style.display = "none";
+            controlButtons.style.display = 'flex';
+            quitBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+            leaveBtn.style.display = 'inline-block';
         }
 
         // handling in coming messages
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            statusElement.textContent = data.message;
-            renderBoard(data.board, false);
+            console.log(data);
+            handleServerMessageForSpectators(data);
         };
 
         ws.onerror = (err) => {
