@@ -1,5 +1,5 @@
 # type: ignore
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from manager.RoomManager import RoomManager
 import json 
@@ -10,7 +10,7 @@ app = FastAPI()
 # Allow CORS for all domains (you can restrict this if you need to)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Explicitly allow your frontend origin
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,6 +78,7 @@ async def make_move(row: int, col: int, user_id: str, websocket: WebSocket):
 
             for websocket_object in room["spectating_players_websocket_objects"]:
                 await websocket_object.send_json({
+                    "status": 0,
                     "message": res["message"],
                     "board": res["board"]
                 })
@@ -98,6 +99,66 @@ def home_page():
         "message": "Welcome to multiplayer tic tac toe game!"
     }
 
+async def remove_player(player_id: str, room: object, message) -> None:
+    # and then remove this player from that room also 
+    # remove that websocket as  it is not needed
+    ws = room[player_id]
+
+    # remove the other player as well from the room and show him appropiate message
+    # Try to send—but if this ws is already closed, ignore the error
+    try:
+        await ws.send_json(message)
+        await ws.close()
+    except Exception:
+        pass
+
+    room["active_players"].remove(player_id) # removing that player
+    room["active_players_websocket_objects"].remove(ws) # removing that websocket
+    app.room_manager.remove_player_from_game(player_id)
+    del room[player_id]
+
+    # deleting the mapping from websocket to room_id
+    app.room_manager.delete_websocket_room_id_mapping(ws)
+
+    # deleting the mapping from player_id to room_id
+    app.room_manager.delete_user_id_room_id_mapping(player_id)
+
+# removing from room 
+async def teardown_room(quitting_player_id: str, room: dict, room_id: str) -> None:
+    # grab a snapshot
+    player_ids = room["active_players"][:]
+    for pid in player_ids:
+        # build the right message
+        msg = {
+            "status": 2,
+            "action": "force_quit",
+            "message": (
+                "You have left the game."
+                if pid == quitting_player_id
+                else "Opponent has left the game."
+            )
+        }
+        # notify & remove
+        await remove_player(pid, room, msg)
+
+    # notify & remove the spectators as well
+    for spectator_ws in room["spectating_players_websocket_objects"][:]:
+        # build the right message
+        msg = {
+            "status": 1,
+            "action": "force_quit",
+            "message": "Game over: one of the players has quit. Spectating has now ended — thanks for watching!"
+        }
+
+        try:
+            await spectator_ws.send_json(msg)
+            await ws.close()
+        except Exception as e:
+            pass
+    
+    
+    # finally dump the room
+    app.room_manager.delete_room_with_room_id(room_id)
 
 # Initialize the game
 # [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
@@ -141,35 +202,38 @@ async def start_game(player_id: str, player_websocket: WebSocket):
                 user_id = str(data['user_id'])
                 await make_move(row, col, user_id, player_websocket)
         except WebSocketDisconnect:
-            pass 
-            # app.room_manager.remove_from_queue(player_id)
-    except AttributeError as e:
-        raise HTTPException(status_code=500, detail=f"Function missing: {str(e)}")
-    except NameError as e:
-        raise HTTPException(status_code=500, detail=f"Game logic module issue: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
+            # disconnected by exiting the application 
+            # need to remove from server
+            room_id = app.room_manager.get_room_id_with_user_id(player_id) 
+            if room_id: 
+                room = app.room_manager.get_room_with_id(room_id) # now get the room
+                if room: 
+                    await teardown_room(player_id, room, room_id)
+            return 
 
-@app.websocket("/ws/watch/{player_id}")
-async def watch_game(player_id: str, player_websocket: WebSocket, room_id: str = Query(...)):
+    except Exception as e:
+        print("Unhandled WS error for", player_id, e)
+        return
+
+@app.websocket("/ws/watch/{spectator_id}")
+async def watch_game(spectator_id: str, spectator_websocket: WebSocket, room_id: str = Query(...)):
     try:
-        # accept websocket request
-        await player_websocket.accept()
+        await spectator_websocket.accept()
         
         if room_id:
             # adding this player to that room 
-            app.room_manager.add_player_to_room(player_id, room_id, player_websocket)
+            app.room_manager.add_spectator_to_room(spectator_id, room_id, spectator_websocket)
             
             # getting that current room
             room = app.room_manager.get_room_with_id(room_id)
-            await player_websocket.send_json({
-                "message": f"Watching room: {room_id}",
+            await spectator_websocket.send_json({
+                "message": "Welcome! You're now spectating a live Tic-Tac-Toe game. Enjoy the show!",
                 "board": room["board"].getBoard()  
             })
 
         else:
             # there is no such room available right now
-            await player_websocket.send_json({
+            await spectator_websocket.send_json({
                 "status": 1,
                 "message": "Invalid room id. Please try again"
             })
@@ -181,7 +245,6 @@ async def watch_game(player_id: str, player_websocket: WebSocket, room_id: str =
                 await asyncio.sleep(10)
         except WebSocketDisconnect:
             pass 
-            # app.room_manager.remove_from_queue(player_id)
     except AttributeError as e:
         raise HTTPException(status_code=500, detail=f"Function missing: {str(e)}")
     except NameError as e:
@@ -199,52 +262,5 @@ async def quit_game(player_id: str) -> None:
     # now get the room 
     room = app.room_manager.get_room_with_id(room_id)
 
-    # and then remove this player from that room also remove that websocket as 
-    # it is not needed
-    quitting_ws = room[player_id]
-    room["active_players"].remove(player_id) # removing that player
-    room["active_players_websocket_objects"].remove(quitting_ws) # removing that websocket
-    app.room_manager.remove_player_from_game(player_id)
-    del room[player_id]
-
-    # Notify the remaining player (if any)
-    for remaining_id in room["active_players"]:
-        remaining_ws = room[remaining_id]
-        
-        # remove the other player as well from the room and show him appropiate message
-        await remaining_ws.send_json({
-            "status": 2,
-            "message": f"Opponent has left the game.",
-            "action": "opponent_left"
-        })
-
-        try:
-            await remaining_ws.close()
-        except Exception as e:
-            print(f"Error closing remaining player's WebSocket: {e}")
-
-        room["active_players"].remove(remaining_id) # removing that player
-        room["active_players_websocket_objects"].remove(remaining_ws) # removing that websocket
-        app.room_manager.remove_player_from_game(remaining_id)
-        del room[remaining_id]
-
-        # deleting the mapping from player_id to room_id for this player
-        app.room_manager.delete_user_id_room_id_mapping(remaining_id)
-
-        # deleting the mapping from websocket to room_id
-        app.room_manager.delete_websocket_room_id_mapping(remaining_ws)
-
-    # Close the quitting player's websocket
-    try:
-        await remaining_ws.close()
-    except Exception as e:
-        print(f"Error closing remaining player's WebSocket: {e}")
-
-    # deleting the mapping from websocket to room_id
-    app.room_manager.delete_websocket_room_id_mapping(quitting_ws)
-
-    # deleting the mapping from player_id to room_id
-    app.room_manager.delete_user_id_room_id_mapping(player_id)
-    
-    # deleting that room 
-    app.room_manager.delete_room_with_room_id(room_id)
+    # removing that player 
+    await teardown_room(player_id, room, room_id)
