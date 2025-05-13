@@ -153,13 +153,13 @@ class RoomManager:
         self.joined_players_id.add(player_id)
         return None 
     
-    def add_player_to_room(self, player_id: str, room_id: str, player_websocket_obj1) -> None:
+    def add_spectator_to_room(self, spectator_id: str, room_id: str, spectator_websocket_obj1) -> None:
         # getting that room from room_id 
         room = self.rooms[room_id] 
 
         # adding that player to the room 
-        room["spectating_players"].append(player_id)
+        room["spectating_players"].append(spectator_id)
 
         # adding this player's websocket object inside the room
-        room["spectating_players_websocket_objects"].append(player_websocket_obj1)
+        room["spectating_players_websocket_objects"].append(spectator_websocket_obj1)
 
