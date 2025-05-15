@@ -11,6 +11,7 @@ const watchBtn = document.getElementById("watch-btn");
 const roomInputContainer = document.getElementById("room-input-container");
 const roomInput = document.getElementById("room-id-input");
 const submitRoomBtn = document.getElementById("submit-room-id");
+const goBackFromWatchGameBtn = document.getElementById("room-input-back-btn");
 
 const privateControls = document.getElementById("private-controls");
 const createRoomBtn = document.getElementById("create-room-btn");
@@ -24,6 +25,7 @@ const leaveBtn = document.getElementById("leave-game-btn");
 
 let ws;
 let userId;
+let joinMode;
 
 /*
 UTILITY FUNCTIONS
@@ -37,12 +39,41 @@ function setUIState(state) {
 
     // now having various states using switch 
     switch(state){
-        case 'waiting':
+        case "waiting":
             // everything needs to be none so no changes just doing this 
             playRandomBtn.style.display = 'none';
             break 
-        case 'game started':
+        case "game started":
+            controlButtons.style.display = 'flex';
             quitBtn.style.display = 'inline-block';
+            break
+        case "home page":
+            playRandomBtn.style.display = 'inline-block';
+            watchBtn.style.display = 'inline-block';
+            hostRoomBtn.style.display = 'inline-block';
+            boardContainer.innerHTML = '';
+            break
+        case "show input":
+            roomInputContainer.style.display = "flex";
+            roomInput.style.display = "inline-block";
+            submitRoomBtn.style.display = "inline-block";
+            break 
+        case "game won":
+            controlButtons.style.display = 'flex';
+            resetBtn.style.display = 'inline-block';
+            leaveBtn.style.display = 'inline-block';
+            break
+        case "watching game":
+            controlButtons.style.display = 'flex';
+            leaveBtn.style.display = 'inline-block';
+            goBackFromWatchGameBtn.style.display = 'inline-block';
+            break
+        case "host room":
+            privateControls.style.display = "flex";
+            createRoomBtn.style.display = "inline-block";
+            joinRoomToPlayBtn.style.display = "inline-block";
+            goBackFromHostRoomBtn.style.display = "inline-block";
+            break 
     }
 }
 
@@ -91,7 +122,9 @@ function renderBoard(board, isTurn) {
 }
 
 
-
+/* 
+INITIALIZATION
+*/
 
 /* 
   When the page loads we want to call the the '/' endpoint from the backend
@@ -115,6 +148,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 })
 
 
+/* 
+SERVER MESSAGE HANDLERS
+*/
+
 function handleServerMessageForPlayers(data, userId) {
     if (data.status === 1) {
         statusElement.innerText = data.message;
@@ -130,12 +167,7 @@ function handleServerMessageForPlayers(data, userId) {
         
         // return this player back to home
         statusElement.innerText = data.message;
-        console.log("THIS IS WHERE I AM FOR BOTH PLAYERS")
-        controlButtons.style.display = 'none';
-        playRandomBtn.style.display = 'inline-block';
-        hostRoomBtn.style.display = 'inline-block';
-        watchBtn.style.display = 'inline-block';
-        boardContainer.innerHTML = '';
+        setUIState("home page");
         return 
     }
     
@@ -143,20 +175,13 @@ function handleServerMessageForPlayers(data, userId) {
 
     if (data.win || data.draw) {
         renderBoard(data.board, false); // No more moves
-        controlButtons.style.display = 'flex';
-        quitBtn.style.display = 'none';
-        resetBtn.style.display = 'inline-block';
-        leaveBtn.style.display = 'inline-block';
+        setUIState("game won");
     } else {
         const isPlayerTurn = data.symbol[userId] === data.current_player;
-        controlButtons.style.display = 'flex';
-        quitBtn.style.display = 'inline-block';
-        resetBtn.style.display = 'none';
-        leaveBtn.style.display = 'none';
+        setUIState("game started");
         renderBoard(data.board, isPlayerTurn);
     }
 }
-
 
 
 function handleServerMessageForSpectators(data) {
@@ -175,6 +200,9 @@ function handleServerMessageForSpectators(data) {
 
 }
 
+/* 
+EVENT LISTENERS
+*/
 
 /*
     event listener for start button
@@ -185,7 +213,7 @@ function handleServerMessageForSpectators(data) {
 playRandomBtn.addEventListener("click", async () => {
     try {
         userId = sessionStorage.getItem('userId');
-        ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}`);
+        ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}?room_id=""`);
         
         // handling the wsopen
         ws.onopen = () => {
@@ -216,45 +244,37 @@ playRandomBtn.addEventListener("click", async () => {
     can join the room and watch other two player play.
 */
 watchBtn.addEventListener("click", () => {
-    statusElement.innerText = "Enter the room id that you want to watch below.";
-    roomInputContainer.style.display = "flex";
-    playRandomBtn.style.display = "none";
-    hostRoomBtn.style.display = "none";
-    privateControls.style.display = "none";
-    watchBtn.style.display = "none";
-    roomInputContainer.style.display  = "flex"; 
+    joinMode = "watch";
+    statusElement.innerText = "Enter the Room ID you want to watch below.";
+    setUIState("show input");
 });
 
-submitRoomBtn.addEventListener('click', async () => {
+submitRoomBtn.addEventListener("click", async () => {
     const roomIdInput = roomInput.value;
     try {
         userId = sessionStorage.getItem('userId');
-        ws = new WebSocket(`ws://localhost:8000/ws/watch/${userId}?room_id=${roomIdInput}`);
-        
-        // handling the wsopen
-        ws.onopen = () => {
-            roomInputContainer.style.display = "none";
-            controlButtons.style.display = 'flex';
-            quitBtn.style.display = 'none';
-            resetBtn.style.display = 'none';
-            leaveBtn.style.display = 'inline-block';
-        }
+        const endpoint = joinMode === "watch" ? "watch" : "play";
+        ws = new WebSocket(`ws://localhost:8000/ws/${endpoint}/${userId}?room_id=${roomIdInput}`);
 
-        // handling in coming messages
+        ws.onopen = () => {
+            setUIState(joinMode === "watch" ? "watching game" : "waiting");
+        };
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             console.log(data);
-            handleServerMessageForSpectators(data);
+            if (joinMode === "watch") {
+                handleServerMessageForSpectators(data);
+            } else {
+                handleServerMessageForPlayers(data, userId);
+            }
         };
 
-        ws.onerror = (err) => {
-            console.error("WebSocket error:", err);
-        }; 
-    }
-    catch(err) {
+        ws.onerror = (err) => console.error("WebSocket error:", err);
+    } catch (err) {
         console.log("Error", err);
     }
-})
+});
 
 
 /* 
@@ -270,12 +290,8 @@ quitBtn.addEventListener('click', async () => {
         if (ws) {
             ws.close();
         }
-        
-        // Reset UI state
-        controlButtons.style.display = 'none';
-        startBtn.style.display = 'inline-block';
-        watchBtn.style.display = 'inline-block';
-        boardContainer.innerHTML = '';
+
+        setUIState("home page");
         statusElement.textContent = 'You have left the game.';
     }
     catch(err){
@@ -289,9 +305,58 @@ quitBtn.addEventListener('click', async () => {
     the frontend to work 
 */
 hostRoomBtn.addEventListener("click", () => {
-    // removing all the other buttons
-    
-    privateControls.style.display = "flex";
-    createRoomBtn.style.display = "inline-block";
-    joinRoomToPlayBtn.style.display = "inline-block";
+    setUIState("host room");
 })
+
+
+/* 
+    go back button just takes you back to home where three buttons are shown
+    playrandomBtn, hostRoomBtn, and watchBtn
+*/
+goBackFromHostRoomBtn.addEventListener("click", () => {
+    setUIState("home page");
+})
+
+/*
+    go back button for watch game that takes yout to home where three buttons 
+    are shown playrandomBtn, hostRoomBtn, and watchBtn
+*/
+goBackFromWatchGameBtn.addEventListener("click", () => {
+    setUIState("home page");
+})
+
+
+/*
+    reserving a room when users wants to create a room
+*/
+createRoomBtn.addEventListener("click", () => {
+    try {
+        userId = sessionStorage.getItem('userId');
+        ws = new WebSocket(`ws://localhost:8000/ws/reserve/${userId}`);
+        
+        // handling the wsopen
+        ws.onopen = () => {
+            setUIState('waiting');
+        }
+
+        // handling in coming messages
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log(data);
+            handleServerMessageForPlayers(data, userId);
+        };
+
+        ws.onerror = (err) => {
+            console.error("WebSocket error:", err);
+        }; 
+    }
+    catch(err) {
+        console.log("Error", err);
+    }
+})
+
+joinRoomToPlayBtn.addEventListener("click", () => {
+    joinMode = "play";
+    statusElement.innerText = "Enter the Room ID you want to join below.";
+    setUIState("show input");
+});
