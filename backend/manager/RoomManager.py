@@ -51,10 +51,30 @@ class RoomManager:
                 break 
             unique_id = "room_" + str(uuid.uuid4())
         return unique_id
-
-    def create_room(self, player1_id, player2_id, player1_websocket_object, player2_websocket_object) -> str:
-        # we need to have a unique room id 
+    
+    # this function doesn't create a room 
+    # it will return a unique room_id
+    # and that can be used in join room 
+    # inside join room function
+    # create_room_with_two_players function can be called with that room_id
+    def reserve_room(self, player_id: str, player_websocket: object) -> str:
+        # making a unique room id 
         room_id = self.generate_room_id()
+
+        # reserving a room with this player's information which will be retrieved later
+        self.rooms[room_id] = {
+            "player1": player_id,
+            player_id: player_websocket,
+        }
+
+        # return the room id to the player
+        return room_id
+
+    def create_room_with_two_players(self, player1_id: str, player2_id: str, player1_websocket_object: object, player2_websocket_object: object, room_id=None) -> str:
+        # we need to have a unique room id 
+        # if the room_id is provided then no need to generate 
+        if room_id is None:
+            room_id = self.generate_room_id()
 
         # create a board and then 
         # add these information in a room
@@ -89,8 +109,23 @@ class RoomManager:
         
         # returning that room id 
         return room_id
+    
+    def join_room(self, room_id: str, player2_id: str, player2_websocket) -> Optional[str]:
+        room = self.get_room_with_id(room_id) 
 
-    def get_room_with_id(self, id: str) -> Optional[str]:
+        if room is None:
+            return f"Room with ID '{room_id}' does not exist."
+
+        # getting the first players information
+        player1_id = room["player1"]
+        player1_websocket = room[player1_id]
+
+        # now creating the room 
+        self.create_room_with_two_players(player1_id, player2_id, player1_websocket, player2_websocket, room_id) 
+        self.joined_players_id.add(player1_id)
+        self.joined_players_id.add(player2_id)
+        
+    def get_room_with_id(self, id: str) -> Optional[dict]:
         if id not in self.rooms:
             return None 
         
@@ -120,9 +155,6 @@ class RoomManager:
         if websocket in self.websocket_to_room_id:
             del self.websocket_to_room_id[websocket]
             
-    def join_room(self) -> None:
-        pass 
-
     def remove_player_from_game(self, player_id: str) -> Optional[str]:
         if player_id in self.in_game_players_id:
             self.in_game_players_id.remove(player_id)
@@ -147,7 +179,7 @@ class RoomManager:
             player2_id, player2_websocket_object = player_id, player_websocket_obj1
             
             # make a room with these two players
-            return self.create_room(player1_id, player2_id, player1_websocket_object, player2_websocket_object) 
+            return self.create_room_with_two_players(player1_id, player2_id, player1_websocket_object, player2_websocket_object) 
 
         self.player_queue.append((player_id, player_websocket_obj1)) 
         self.joined_players_id.add(player_id)
