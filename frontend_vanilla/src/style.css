@@ -248,3 +248,30 @@ h1 {
   .cell { font-size: 40px; }
   button { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
 }
+
+/* Back Button Styling */
+#room-input-back-btn {
+  background-color: var(--accent1);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+}
+
+#room-input-back-btn:hover {
+  background-color: #6d3e33;
+  transform: translateY(-2px);
+}
+
+#room-input-back-btn:active {
+  transform: translateY(1px);
+}
+
