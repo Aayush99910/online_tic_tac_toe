@@ -25,7 +25,8 @@ const leaveBtn = document.getElementById("leave-game-btn");
 
 let ws;
 let userId;
-let joinMode;
+let host = false;
+let joinMode = "play";
 
 /*
 UTILITY FUNCTIONS
@@ -213,7 +214,7 @@ EVENT LISTENERS
 playRandomBtn.addEventListener("click", async () => {
     try {
         userId = sessionStorage.getItem('userId');
-        ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}?room_id=""`);
+        ws = new WebSocket(`ws://localhost:8000/ws/play/${userId}?host=${host}&room_id=${1}`);
         
         // handling the wsopen
         ws.onopen = () => {
@@ -254,7 +255,7 @@ submitRoomBtn.addEventListener("click", async () => {
     try {
         userId = sessionStorage.getItem('userId');
         const endpoint = joinMode === "watch" ? "watch" : "play";
-        ws = new WebSocket(`ws://localhost:8000/ws/${endpoint}/${userId}?room_id=${roomIdInput}`);
+        ws = new WebSocket(`ws://localhost:8000/ws/${endpoint}/${userId}?host=${host}&room_id=${roomIdInput}`);
 
         ws.onopen = () => {
             setUIState(joinMode === "watch" ? "watching game" : "waiting");
@@ -332,28 +333,34 @@ goBackFromWatchGameBtn.addEventListener("click", () => {
 createRoomBtn.addEventListener("click", () => {
     try {
         userId = sessionStorage.getItem('userId');
+        host = true;
         ws = new WebSocket(`ws://localhost:8000/ws/reserve/${userId}`);
         
-        // handling the wsopen
         ws.onopen = () => {
             setUIState('waiting');
-        }
+        };
 
-        // handling in coming messages
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             console.log(data);
-            handleServerMessageForPlayers(data, userId);
+            
+            if (data.status === 1) {
+                // Room created, show room ID
+                statusElement.innerText = data.message;
+                setUIState("waiting");
+            } else {
+                // Game is starting or other gameplay messages
+                handleServerMessageForPlayers(data, userId);
+            }
         };
 
         ws.onerror = (err) => {
             console.error("WebSocket error:", err);
         }; 
-    }
-    catch(err) {
+    } catch (err) {
         console.log("Error", err);
     }
-})
+});
 
 joinRoomToPlayBtn.addEventListener("click", () => {
     joinMode = "play";
