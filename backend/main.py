@@ -2,6 +2,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from manager.RoomManager import RoomManager
+from typing import Optional
 import json 
 import asyncio
 
@@ -15,6 +16,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # global room manager object
 app.room_manager = RoomManager()
@@ -152,7 +154,7 @@ async def teardown_room(quitting_player_id: str, room: dict, room_id: str) -> No
 
         try:
             await spectator_ws.send_json(msg)
-            await ws.close()
+            await spectator_ws.close()
         except Exception as e:
             pass
     
@@ -160,40 +162,68 @@ async def teardown_room(quitting_player_id: str, room: dict, room_id: str) -> No
     # finally dump the room
     app.room_manager.delete_room_with_room_id(room_id)
 
-# Initialize the game
-# [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+
+
 @app.websocket("/ws/play/{player_id}")
-async def start_game(player_id: str, player_websocket: WebSocket):
+async def start_game(player_id: str, player_websocket: WebSocket, host: bool = False, room_id: Optional[str] = Query(None)):
     try:
         # accept websocket request
         await player_websocket.accept()
 
-        # add the player to a players queue 
-        # if a room is created then start the game or else send a waiting message
-        room_id = app.room_manager.add_player_to_queue(player_id, player_websocket)
+        # two conditions:
+        # 1. Regular player joining a specific room
+        # 2. Random matchmaking
         
-        if room_id:
-            # getting the room information 
+        if not host and room_id != "1" and room_id is not None:
+            # This is a player joining with a specific room_id
+            app.room_manager.join_room(room_id, player_id, player_websocket)
             room = app.room_manager.get_room_with_id(room_id)
-
-            # start the game
-            for websocket_object in room["active_players_websocket_objects"]:
-                await websocket_object.send_json({
-                    "status": 0,
-                    "message": "Game started",
-                    "board": room["board"].getBoard(),
-                    "symbol": room["symbol"],
-                    "current_player": room["current_player"],
-                    "room_id": room_id # Testing purpose will be sending only when they create a room and not everytime
-                })
-
-        else:
-            # waiting there is no match 
+            
+            # Notify this player that they've joined
             await player_websocket.send_json({
-                "status": 1,
-                "message": "Waiting for other player to join"
+                "status": 0,
+                "message": "Game started",
+                "board": room["board"].getBoard(),
+                "symbol": room["symbol"],
+                "current_player": room["current_player"]
             })
+            
+            # Find the host's websocket and notify them
+            host_ws = None
+            for ws in room["active_players_websocket_objects"]:
+                if ws != player_websocket:
+                    host_ws = ws
+                    break
+                    
+            if host_ws:
+                # The host is already being notified in the reserve_room function
+                pass
+                
+        else:
+            # Random matchmaking - keep the original logic
+            room_id = app.room_manager.add_player_to_queue(player_id, player_websocket)
+            
+            if room_id:
+                # A match was found
+                room = app.room_manager.get_room_with_id(room_id)
 
+                # Start the game
+                for websocket_object in room["active_players_websocket_objects"]:
+                    await websocket_object.send_json({
+                        "status": 0,
+                        "message": "Game started",
+                        "board": room["board"].getBoard(),
+                        "symbol": room["symbol"],
+                        "current_player": room["current_player"]
+                    })
+            else:
+                # Waiting for another player
+                await player_websocket.send_json({
+                    "status": 1,
+                    "message": "Waiting for other player to join"
+                })
+        
+        # Handle moves
         try:
             while True:
                 data = json.loads(await player_websocket.receive_text())
@@ -202,17 +232,66 @@ async def start_game(player_id: str, player_websocket: WebSocket):
                 user_id = str(data['user_id'])
                 await make_move(row, col, user_id, player_websocket)
         except WebSocketDisconnect:
-            # disconnected by exiting the application 
-            # need to remove from server
+            # Handle disconnection
             room_id = app.room_manager.get_room_id_with_user_id(player_id) 
             if room_id: 
-                room = app.room_manager.get_room_with_id(room_id) # now get the room
+                room = app.room_manager.get_room_with_id(room_id)
                 if room: 
                     await teardown_room(player_id, room, room_id)
-            return 
+            return
 
     except Exception as e:
         print("Unhandled WS error for", player_id, e)
+        return
+
+@app.websocket("/ws/reserve/{player_id}")
+async def reserve_room(player_id: str, player_websocket: WebSocket) -> str:
+    await player_websocket.accept()
+    room_id = app.room_manager.reserve_room(player_id, player_websocket)
+    # Notify the host that the room was created successfully
+    await player_websocket.send_json({
+        "status": 1,
+        "message": f"Room Created Successfully. Copy and send this roomid to your friend: {room_id}"
+    })
+
+    try:
+        # First wait for the second player to join
+        while True:
+            # Check if the room now has a second player
+            room = app.room_manager.get_room_with_id(room_id)
+            if "player2" in room:
+                # Don't close the websocket, transition to gameplay
+                await player_websocket.send_json({
+                    "status": 0,
+                    "message": "Second player joined. Game is starting.",
+                    "board": room["board"].getBoard(),
+                    "symbol": room["symbol"],
+                    "current_player": room["current_player"],
+                    "room_id": room_id
+                })
+                break  # Exit the waiting loop and move to gameplay
+
+            await asyncio.sleep(1)  # Prevent tight loop, check every second
+        
+        # Now handle gameplay (similar to start_game function)
+        while True:
+            data = json.loads(await player_websocket.receive_text())
+            row = int(data['row'])
+            col = int(data['col'])
+            user_id = str(data['user_id'])
+            await make_move(row, col, user_id, player_websocket)
+            
+    except WebSocketDisconnect:
+        print(f"Player {player_id} disconnected")
+        # Handle disconnection - clean up room
+        room_id = app.room_manager.get_room_id_with_user_id(player_id) 
+        if room_id: 
+            room = app.room_manager.get_room_with_id(room_id)
+            if room: 
+                await teardown_room(player_id, room, room_id)
+        return
+    except Exception as e:
+        print(f"Error in reserve_room for player {player_id}: {e}")
         return
 
 @app.websocket("/ws/watch/{spectator_id}")
@@ -252,6 +331,7 @@ async def watch_game(spectator_id: str, spectator_websocket: WebSocket, room_id:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
     
+
 
 @app.post("/quit/{player_id}")
 async def quit_game(player_id: str) -> None:
