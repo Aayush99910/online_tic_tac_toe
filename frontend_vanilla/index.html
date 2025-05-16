@@ -21,15 +21,18 @@
     <button id="join-room-to-play-btn">Join Room to Play</button>
     <button id="private-back-btn">Go Back</button>
   </div>
-  <div id="room-input-container" style="display: none;">
+  <div id="room-input-container" style="display: none; flex-direction: column; align-items: center;">
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
     <input type="text" id="room-id-input" placeholder="Enter Room ID" />
     <button id="submit-room-id">Go</button>
+  </div>
+  <button id="room-input-back-btn" class="back-btn">Go Back</button>
   </div>
   <div class="board" id="game-board"></div>
   <div id="control-buttons" style="display: none;">
     <button id="quit-game-btn">Quit Game</button>
     <button id="reset-game-btn">Restart Game</button>
-    <button id="leave-game-btn" style="display: none;">Leave Spectating</button>
+    <button id="leave-game-btn" style="display: none;">Leave Game</button>
   </div>
   <script src="src/main.js"></script>
 </body>
