@@ -178,6 +178,9 @@ class RoomManager:
             player1_id, player1_websocket_object = self.player_queue.popleft()
             player2_id, player2_websocket_object = player_id, player_websocket_obj1
             
+            # add the second player to the joined_players set
+            self.joined_players_id.add(player_id)
+            
             # make a room with these two players
             return self.create_room_with_two_players(player1_id, player2_id, player1_websocket_object, player2_websocket_object) 
 
