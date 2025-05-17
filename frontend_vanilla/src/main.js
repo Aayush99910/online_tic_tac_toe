@@ -367,3 +367,7 @@ joinRoomToPlayBtn.addEventListener("click", () => {
     statusElement.innerText = "Enter the Room ID you want to join below.";
     setUIState("show input");
 });
+
+leaveBtn.addEventListener("click", () => {
+    
+})
