@@ -368,6 +368,38 @@ joinRoomToPlayBtn.addEventListener("click", () => {
     setUIState("show input");
 });
 
-leaveBtn.addEventListener("click", () => {
-    
+
+/* 
+    restarting the match if both players agree to restart
+*/
+resetBtn.addEventListener("click", async() => {
+    try {
+        const userId = session.getItem("userId");
+        const data = await fetch(`http://localhost:8000/reset/${userId}`, { method: 'POST' });
+        console.log(data);
+    } catch(error) {
+        console.log("Error", err);
+    }
+})
+
+
+/*
+    This is the same logic as quit game button and it exits the room and removes the room
+*/
+leaveBtn.addEventListener("click", async() => {
+    try {
+        const userId = sessionStorage.getItem('userId');
+        await fetch(`http://localhost:8000/quit/${userId}`, { method: 'POST' });
+        
+        // closing the websocket connection
+        if (ws) {
+            ws.close();
+        }
+
+        setUIState("home page");
+        statusElement.textContent = 'You have left the game.';
+    }
+    catch(err){
+        console.log("Error", err);
+    }
 })
