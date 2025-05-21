@@ -330,8 +330,24 @@ async def watch_game(spectator_id: str, spectator_websocket: WebSocket, room_id:
         raise HTTPException(status_code=500, detail=f"Game logic module issue: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
-    
 
+@app.post('/reset/{player_id}')
+async def reset_game(player_id: str) -> None:
+    # we need to first send the other player a question asking if they would like to restart or not
+    # if yes then we can restart the game 
+    # else we should exit to the lobby
+
+    # get the room id where this player was playing 
+    room_id = app.room_manager.get_room_id_with_user_id(player_id)
+
+    # now getting the room
+    room = app.room_manager.get_room_with_id(room_id)
+
+    # broadcasting the message to the other player
+    other_player_websocket = room[player_id]
+    other_player_websocket.send_json({
+        "message": "Other player wants to restart the game? Do you agree?"
+    })
 
 @app.post("/quit/{player_id}")
 async def quit_game(player_id: str) -> None:
